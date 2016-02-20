@@ -1,14 +1,12 @@
 package com.example.rucha.myapplication;
 /*Xinhehe*/
-import android.Manifest;
+
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
 import android.view.View;
@@ -33,27 +31,23 @@ import android.content.Context;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-//
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.content.StringBody;
+
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
 import android.util.Log;
 
 import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.Headers;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class Updates extends AppCompatActivity implements View.OnClickListener {
     ImageView imageToUpload;
     Button bSendAll;
     EditText textView;
@@ -67,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.posts);
 
         imageToUpload = (ImageView) findViewById(R.id.imageToUpload);
         bSendAll = (Button) findViewById(R.id.bSendAll);

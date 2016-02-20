@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if(v.getId()==R.id.Bsignuph)
             {
 
-                Intent i = new Intent(this,trial.class);
+                Intent i = new Intent(this,SignUp.class);
                 startActivity(i);
                /* Intent i = new Intent(this,SignUp.class);
                 startActivity(i);*/

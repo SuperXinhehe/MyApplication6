@@ -48,7 +48,7 @@
             android:value="@string/google_maps_key" />
 
         <activity android:name=".MapsActivity" android:label="@string/title_activity_maps"></activity>
-        <activity android:name=".trial"></activity>
+        <!--<activity android:name=".trial"></activity>-->
         <activity android:name=".Updates"></activity>
         <activity android:name=".SignUp"></activity>
         <!-- ATTENTION: This was auto-generated to add Google Play services to your project for
