@@ -1,88 +1,163 @@
 package com.example.rucha.myapplication;
-
-/**
- * Created by Rucha on 2/18/2016.
- */
-
+/*Xinhehe*/
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.net.Uri;
-import android.os.AsyncTask;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
-import android.os.StrictMode;
-import android.provider.MediaStore;
+
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
-import android.util.Log;
+import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.EditText;
+import android.widget.Button;
+import android.provider.MediaStore;
+import android.net.Uri;
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.os.StrictMode;
+import android.location.Location;
+import android.location.LocationManager;
+import android.location.LocationListener;
+import android.content.Context;
 
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+//
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.content.StringBody;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+import android.util.Log;
+
 import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.Headers;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-//
-
-public class Updates extends AppCompatActivity implements View.OnClickListener {
-    private LocationManager locationManager;
-    private LocationListener locationListener;
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     ImageView imageToUpload;
     Button bSendAll;
     EditText textView;
     Button bImgUpload;
-    private GoogleApiClient client;
-    Location location;
+    TextView coordinates;
     JSONObject geoinfo = new JSONObject();
     private static final int RESULT_LOAD_IMAGE = 1;
-    private static final String SERVER_ADDRESS = "http://54.191.90.109:3000";
-    private static final String TAG = "STATE";
+    public static final String SERVER_ADDRESS = "http://10.0.0.9:3000";
+    public static final String TAG = "STATE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (android.os.Build.VERSION.SDK_INT > 9) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-        }
-        setContentView(R.layout.updates);
+        setContentView(R.layout.activity_main);
 
         imageToUpload = (ImageView) findViewById(R.id.imageToUpload);
         bSendAll = (Button) findViewById(R.id.bSendAll);
         textView = (EditText) findViewById(R.id.textInfo);
         bImgUpload = (Button) findViewById(R.id.bUploadImg);
+        coordinates = (TextView) findViewById(R.id.displayCoordinates);
+        getGeoInfo(getLastKnownLocation());
+
+        Log.e(TAG, geoinfo.toString());
         imageToUpload.setOnClickListener(this);
         bSendAll.setOnClickListener(this);
+    }
+    // method to get the current geo coordinates
+    // and set up the text to coordinate display
+    private void getGeoInfo(Location loc) {
 
-        //Get lat long timestamp at that instant
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
-         geoinfo=GetGeoInfo();
-        Log.e("GEOINFO ",geoinfo.toString());
+//        MyLocationListener locationListener = new MyLocationListener();
+        if(loc == null) Log.e(TAG,"INVALID LOCATION");
+        Toast.makeText(
+                getBaseContext(),
+                "Location changed: Lat: " + loc.getLatitude() + " Lng: "
+                        + loc.getLongitude(), Toast.LENGTH_SHORT).show();
+        String longitude = "Longitude: " + loc.getLongitude();
+        Log.e(TAG, longitude);
+        String latitude = "Latitude: " + loc.getLatitude();
+        Log.e(TAG, latitude);
 
+        /*------- To get city name from coordinates -------- */
+        String cityName = null;
+        Geocoder gcd = new Geocoder(getBaseContext(), Locale.getDefault());
+        List<Address> addresses;
+        try {
+            addresses = gcd.getFromLocation(loc.getLatitude(), loc.getLongitude(), 1);
+            if (addresses.size() > 0) {
+                System.out.println(addresses.get(0).getLocality());
+                cityName = addresses.get(0).getLocality();
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        String s = longitude + ", " + latitude + " City: " + cityName;
+        Log.e(TAG,s);
+        coordinates.setText(s);
+        try {
+            geoinfo.put("lat",latitude);
+            geoinfo.put("long",longitude);
+            geoinfo.put("timestamp",getCurrentTimeStamp());
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Location getLastKnownLocation() {
+        LocationManager mLocationManager;
+        mLocationManager = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
+        List<String> providers = mLocationManager.getProviders(true);
+        Location bestLocation = null;
+        Location l = null;
+        for (String provider : providers) {
+            try {
+                l = mLocationManager.getLastKnownLocation(provider);
+            }catch(SecurityException e) {
+                Log.e(TAG,"Security Exception");
+                e.printStackTrace();
+            }
+            if (l == null) {
+                continue;
+            }
+            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
+                // Found best last known location: %s", l);
+                bestLocation = l;
+            }
+        }
+        return bestLocation;
+    }
+    private Location getLocationByProvider(String provider) {
+        Location location = null;
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        try {
+            if (locationManager.isProviderEnabled(provider)) {
+                Log.e(TAG,"Try to connect");
+                location = locationManager.getLastKnownLocation(provider);
+            }
+        } catch (IllegalArgumentException e) {
+            Log.d(TAG, "Cannot access Provider " + provider);
+        } catch (SecurityException e) {
+            Log.e(TAG,"security exception");
+        }
+        return location;
     }
 
     @Override
@@ -115,6 +190,7 @@ public class Updates extends AppCompatActivity implements View.OnClickListener {
             case R.id.imageToUpload:
                 galleryIntent = new Intent(Intent.ACTION_PICK,MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                 startActivityForResult(galleryIntent, RESULT_LOAD_IMAGE);
+                imageToUpload.setVisibility(View.VISIBLE);
                 break;
             case R.id.bSendAll:
                 Bitmap image;
@@ -150,13 +226,8 @@ public class Updates extends AppCompatActivity implements View.OnClickListener {
         // data input json format:
         String ImageText(String text, byte[] imageBytes) {
             try {
-                Json js = new Json();
-                int usrid = js.getId();
-
                 String imgStr = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
                 JSONObject jsonObject = new JSONObject();
-
-                jsonObject.put("usrid",usrid);
                 jsonObject.put("geoinfo",geoinfo);
                 jsonObject.put("text", text);
                 jsonObject.put("image",imgStr);
@@ -188,7 +259,7 @@ public class Updates extends AppCompatActivity implements View.OnClickListener {
             }
             String json = ImageText(text,imageBytes);
             String link = SERVER_ADDRESS + "/api/app/upload";
-
+            Log.e(TAG,json.length()+"");
             try {
                 RequestBody requestBody = RequestBody.create(JSON,json);
                 Request request = new Request.Builder()
@@ -228,50 +299,17 @@ public class Updates extends AppCompatActivity implements View.OnClickListener {
             bImgUpload.setEnabled(false);
         }
 
-
     }
-   public JSONObject GetGeoInfo()
-   {
-       locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-       Log.e("List: ", locationManager.getProviders(true).toString());
-       Log.e("GPS Status: ", locationManager.getGpsStatus(null).toString());
+    public String getCurrentTimeStamp(){
 
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z");
+        String currentTimeStamp= sdf.format(new Date());
+        StringBuilder timestamp = new StringBuilder(currentTimeStamp);
+        timestamp.insert(currentTimeStamp.length() - 2, ':');
 
-       LocationListener listener = new LocationListener() {
-           @Override
-           public void onLocationChanged(Location location) {
-               Log.e("New location:", "lat:" + location.getLatitude() + " long:" + location.getLongitude());
-               double latitude = location.getLatitude();
-               double longitude = location.getLongitude();
-               try {
-                   geoinfo.put("lat", latitude);
-                   geoinfo.put("long", longitude);
-                   MapsActivity mps =new MapsActivity();
-                   String timeStamp = mps.getCurrentTimeStamp();
-                   geoinfo.put("timestamp", timeStamp);
-               } catch (JSONException e) {
-                   e.printStackTrace();
-               }
-           }
+        return timestamp.toString();
+    }
 
-           @Override
-           public void onStatusChanged(String provider, int status, Bundle extras) {
-
-           }
-
-           @Override
-           public void onProviderEnabled(String provider) {
-
-           }
-
-           @Override
-           public void onProviderDisabled(String provider) {
-
-           }
-       };
-
-       return geoinfo;
-   }
 
 }
 
